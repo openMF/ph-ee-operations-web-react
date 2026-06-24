@@ -1,92 +1,131 @@
-# Payment Hub EE Operations Web
+# Payment Hub EE - Operations Web App (React)
 
-A web dashboard for managing [Mifos Payment Hub EE](https://mifos.org/payment-hub-ee/) operations — bulk payments, vouchers, account mapping, G2P configuration, RBAC, and reporting.
+This repository contains the React-based rewrite of the Payment Hub EE Operations Web App. The goal is to achieve feature parity with the existing Angular Operations App through an MVP release targeted for version 2.1.0 (October 2026).
 
-## Tech Stack
+It is currently work in progress and not recommended for production deployment.
 
-| Tool | Purpose |
-|---|---|
-| React 19 + TypeScript | UI and type safety |
-| Vite | Build tooling and dev server |
-| Tailwind CSS v4 + ShadCN (Nova) | Styling and accessible UI components |
-| React Router v7 | Client-side routing |
-| TanStack Query v5 | Server state management and caching |
-| Axios | HTTP client with per-request tenant header injection |
+The `main` branch contains release code. All PRs should be submitted to the `dev` branch first, and will be merged to `main` at a release.
 
-## Setup
+This project is part of **C4GT DMP 2026** under [The Mifos Initiative](https://mifos.org).
 
-### 1. Install dependencies
+##  Tech Stack
 
-```bash
-npm install
-```
+- **React + TypeScript** – Frontend architecture
+- **Vite** – Build tool
+- **Tailwind CSS v4 + ShadCN UI (Radix Nova)** – UI and styling
+- **React Router v6** – Routing
+- **TanStack Query** – Server state management
+- **Axios** – HTTP client
+- **Keycloak** – Authentication and RBAC (OAuth2)
 
-### 2. Configure environment variables
-
-```bash
-cp .env.example .env
-```
-
-Fill in the values in `.env` (see [Environment Variables](#environment-variables) below).
-
-### 3. Start the development server
-
-```bash
-npm run dev
-```
-
-The app will be available at `http://localhost:5173`.
-
-## Folder Structure
+##  Project Structure
 
 ```
 src/
+├── modules/              # Feature modules, one per domain area
+│   ├── auth/              # Keycloak integration, login, protected routes
+│   ├── dashboard/          # Dashboard module cards
+│   ├── payment-hub/        # Main Batches, Sub Batches, Transfers
+│   ├── vouchers/            # Voucher Management (G2P)
+│   ├── account-mapper/       # Beneficiary account mapping
+│   ├── g2p-config/            # G2P Payment Configuration
+│   ├── settings/                # App settings
+│   └── rbac/                      # Role configuration and user management
 ├── components/
-│   └── shared/
-│       └── AppLayout.tsx       # Sidebar + header shell for protected routes
-├── config/
-│   └── constants.ts            # App-wide constants (tenants, app name)
+│   ├── ui/                # ShadCN UI primitives
+│   └── shared/             # Shared components (AppLayout, DataTable, StatusBadge)
 ├── lib/
-│   ├── api/
-│   │   └── client.ts           # Axios instance with X-TenantId interceptor
-│   └── utils.ts                # Tailwind class merge utility (cn)
-└── pages/
-    ├── SplashScreen.tsx
-    ├── LoginPage.tsx
-    ├── Dashboard.tsx
-    ├── PaymentHub.tsx
-    ├── Vouchers.tsx
-    ├── AccountMapper.tsx
-    ├── G2PConfig.tsx
-    ├── Settings.tsx
-    ├── RBACConfig.tsx
-    └── Reporting.tsx
+│   ├── api/                # Axios client setup, API interceptors
+│   └── keycloak/            # Keycloak auth context and hooks
+├── config/                  # Environment config, constants
+├── types/                     # Shared TypeScript types
+├── App.tsx                      # Root component
+├── index.css                      # Tailwind base layer and theme
+├── main.tsx                         # React entry point, router setup
+└── vite-env.d.ts                      # Vite TypeScript definitions
+
+root/
+├── components.json          # ShadCN CLI config
+├── index.html                 # App HTML shell
+├── eslint.config.js             # Linting rules
+├── .env.example                   # Environment variable template
+└── .gitignore
 ```
 
-## Routes
+##  Prerequisites
 
-| Path | Component | Layout |
-|---|---|---|
-| `/splash` | SplashScreen | — |
-| `/login` | LoginPage | — |
-| `/` | Dashboard | AppLayout |
-| `/payment-hub` | PaymentHub | AppLayout |
-| `/vouchers` | Vouchers | AppLayout |
-| `/account-mapper` | AccountMapper | AppLayout |
-| `/g2p-config` | G2PConfig | AppLayout |
-| `/settings` | Settings | AppLayout |
-| `/rbac` | RBACConfig | AppLayout |
-| `/reporting` | Reporting | AppLayout |
+- Node.js and npm installed
+- Access to a running Payment Hub EE backend instance (or use mock data during early development)
+- A configured Keycloak realm for authentication (once auth integration begins)
 
-## Environment Variables
+##  Installation & Setup
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/openMF/ph-ee-operations-web-react.git
+
+# 2. Move into the project directory
+cd ph-ee-operations-web-react
+
+# 3. Install dependencies
+npm install
+
+# 4. Copy environment variables and configure them
+cp .env.example .env
+
+# 5. Start the development server
+npm run dev
+```
+
+Navigate to `http://localhost:5173/` to view the app. It will automatically reload if you change any source files.
+
+##  Environment Variables
+
+Copy `.env.example` to `.env` and adjust the values as needed.
 
 | Variable | Description |
 |---|---|
-| `VITE_API_BASE_URL` | Base URL for the PH-EE operations API |
-| `VITE_BULK_CONNECTOR_URL` | URL for the bulk connector service |
-| `VITE_KEYCLOAK_URL` | Keycloak authentication server URL |
-| `VITE_KEYCLOAK_REALM` | Keycloak realm name |
-| `VITE_KEYCLOAK_CLIENT_ID` | Keycloak client ID for this application |
-| `VITE_TENANT_ID` | Default tenant identifier |
+| `VITE_API_BASE_URL` | Base URL for the Payment Hub Operations backend services |
+| `VITE_BULK_CONNECTOR_URL` | URL for Bulk Import Batch creation backend services |
+| `VITE_KEYCLOAK_URL` | Keycloak auth server URL |
+| `VITE_KEYCLOAK_REALM` | Keycloak realm used for authentication |
+| `VITE_KEYCLOAK_CLIENT_ID` | Keycloak client identifier for this app |
+| `VITE_TENANT_ID` | Default Platform Tenant Identifier used in API calls |
 
-The active tenant is also stored in `localStorage` under the key `tenant` and is sent with every API request as the `X-TenantId` header.
+##  Routes
+
+| Route | Description |
+|---|---|
+| `/splash` | Animated landing screen |
+| `/login` | Login with Keycloak authentication |
+| `/` | Dashboard with module cards |
+| `/payment-hub` | Main Batches, Sub Batches, Transfers |
+| `/vouchers` | Voucher Management (list and create) |
+| `/account-mapper` | Beneficiary account mapping (list and create) |
+| `/g2p-config` | G2P Payment Configuration (list and create) |
+| `/settings` | App settings |
+| `/rbac` | Role configuration and user management |
+| `/reporting` | Reporting dashboard (in development) |
+
+##  Building for Production
+
+```bash
+npm run build
+```
+
+Build artifacts will be stored in the `dist/` directory.
+
+##  Contributing
+
+Contributions are welcome to improve the project.
+
+- All PRs should target the `dev` branch
+- Reference the relevant Jira ticket in your PR title, e.g. `PHEE-XXX: short description`
+- For design references, see the Figma file (link to be added)
+- For backend integration questions or access, reach out to the project mentors
+
+##  Related Links
+
+- [Angular Operations App (reference implementation)](https://github.com/openMF/ph-ee-operations-web)
+- [Jira Epic — PHEE-363](https://mifosforge.jira.com/browse/PHEE-363)
+- [The Mifos Initiative](https://mifos.org)

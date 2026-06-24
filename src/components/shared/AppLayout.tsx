@@ -28,8 +28,14 @@ export default function AppLayout() {
         className="flex flex-col text-white shrink-0"
       >
         {/* Logo */}
-        <div className="px-6 py-5 border-b border-white/10">
-          <span className="font-bold text-base tracking-wide">{APP_NAME}</span>
+        <div className="px-4 py-3 border-b border-white/10 flex items-center justify-center">
+          <div className="bg-white rounded px-2 py-1">
+            <img
+              src="/payment-hub-ee.png"
+              alt={APP_NAME}
+              className="h-10 w-auto object-contain"
+            />
+          </div>
         </div>
 
         {/* Nav items */}
