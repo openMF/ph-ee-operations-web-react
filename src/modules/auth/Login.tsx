@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { User, Lock, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -12,11 +12,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useToast } from '@/components/shared/ToastProvider'
+import keycloak, { persistTokens } from '@/lib/keycloak/keycloak'
 
 const TENANTS = ['greenbank', 'bluebank', 'redbank']
 
+const LOGOUT_REASON_MESSAGES: Record<string, string> = {
+  inactivity: 'Session ended due to inactivity.',
+  expired: 'Your session expired. Please log in again.',
+}
+
 export default function Login() {
   const navigate = useNavigate()
+  const { toast } = useToast()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [tenant, setTenant] = useState('')
@@ -24,6 +32,18 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Surface why the user landed back here after a hard logout redirect —
+  // no in-memory state survives that navigation, so this is passed via
+  // sessionStorage by KeycloakProvider/authInterceptors.
+  useEffect(() => {
+    const reason = sessionStorage.getItem('logout_reason')
+    if (reason) {
+      toast(LOGOUT_REASON_MESSAGES[reason] ?? 'Session ended.', 'warning')
+      sessionStorage.removeItem('logout_reason')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -46,7 +66,16 @@ export default function Login() {
       )
       const data = await response.json()
       if (data.access_token) {
-        localStorage.setItem('kc_token', data.access_token)
+        // Hand the ROPC tokens to the shared keycloak-js instance so its own
+        // updateToken()/logout() have a real refresh/id token to work with —
+        // without this, keycloak.token stays undefined forever and silent
+        // refresh has nothing to refresh.
+        await keycloak.init({
+          token: data.access_token,
+          refreshToken: data.refresh_token,
+          idToken: data.id_token,
+        })
+        persistTokens(keycloak)
         localStorage.setItem('tenant', tenant)
         navigate('/')
       } else {
