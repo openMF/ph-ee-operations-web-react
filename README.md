@@ -200,6 +200,20 @@ VITE_KEYCLOAK_CLIENT_ID=opsapp
 
 ---
 
+## Security Notes
+
+**Why ROPC (Resource Owner Password Credentials)?** This app owns its own login form and is served from the same trusted origin as the app itself — it is a first-party client, not a third party integrating with Keycloak. Redirect-based OIDC flows exist specifically to avoid a client ever seeing the user's raw credentials; that concern doesn't apply here since the login form *is* the client. ROPC is an accepted grant type for exactly this kind of first-party, trusted-client scenario.
+
+**Token storage.** Access, refresh, and ID tokens are stored in `localStorage` (`kc_token`, `kc_refresh_token`, `kc_id_token`) — a deliberate choice, not an oversight. The alternative (in-memory only) would log the user out on every page refresh, since this app has no cookie-based or silent-SSO recovery mechanism to re-establish a session after a reload. The accepted tradeoff is XSS exposure: if malicious script ever runs in this app's origin, it can read these tokens. Mitigate by keeping dependencies patched and avoiding `dangerouslySetInnerHTML`/unsanitized third-party content; this is a separate, ongoing hardening concern from the auth flow itself.
+
+**No tokens in URLs.** ROPC posts credentials and receives tokens in request/response bodies only. `keycloak.logout()`'s `redirectUri` is a return-to address, not a token carrier. No query string or URL fragment ever carries a token in this app.
+
+**`Platform-TenantId` and `Authorization` headers** are injected on every request from both axios instances (`src/lib/api/client.ts` and `src/lib/api/g2pConfig.ts`) via the shared `createAuthInterceptors()` factory in `src/lib/api/authInterceptors.ts`.
+
+**Refresh tokens are never logged.** Every place that reads a token value (`src/lib/keycloak/refresh.ts`, `src/lib/api/authInterceptors.ts`, `src/lib/keycloak/KeycloakProvider.tsx`) only ever logs or surfaces booleans (refreshed / not), HTTP status codes, or `.message` strings — never the token itself. Keep it that way: **never `console.log` a token, refresh token, or ID token value**, even for debugging; log success/failure booleans instead.
+
+---
+
 ## Gazelle Backend Setup
 
 Add to your hosts file (`C:\Windows\System32\drivers\etc\hosts` on Windows, `/etc/hosts` on Linux/macOS):
