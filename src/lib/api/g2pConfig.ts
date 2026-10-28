@@ -1,6 +1,8 @@
 import axios from 'axios'
+import { createAuthInterceptors } from './authInterceptors'
 
 const g2pClient = axios.create({ baseURL: import.meta.env.VITE_G2P_SERVICE_URL || 'http://localhost:8084' })
+createAuthInterceptors(g2pClient)
 
 export const fetchG2PConfigs = async () => {
   const response = await g2pClient.get('/g2pPaymentConfig')

@@ -4,6 +4,8 @@ import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import KeycloakProvider from '@/lib/keycloak/KeycloakProvider'
+import ProtectedRoute from '@/components/shared/ProtectedRoute'
+import ForbiddenListener from '@/components/shared/ForbiddenListener'
 import ToastProvider from '@/components/shared/ToastProvider'
 import AppLayout from '@/components/shared/AppLayout'
 import SplashScreen from '@/pages/SplashScreen'
@@ -26,6 +28,7 @@ import AccountMapperSelfService from '@/pages/AccountMapperSelfService'
 function AuthRoot() {
   return (
     <KeycloakProvider>
+      <ForbiddenListener />
       <Outlet />
     </KeycloakProvider>
   )
@@ -39,27 +42,32 @@ const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   { path: '/account-mapper/self-service', element: <AccountMapperSelfService /> },
 
-  // Protected routes — wrapped by KeycloakProvider
+  // Protected routes — wrapped by KeycloakProvider, guarded by ProtectedRoute
   {
     element: <AuthRoot />,
     children: [
       {
-        path: '/',
-        element: <AppLayout />,
+        element: <ProtectedRoute />,
         children: [
-          { index: true, element: <Dashboard /> },
-          { path: 'payment-hub', element: <PaymentHub /> },
-          { path: 'payment-hub/batch/:batchId', element: <BatchDetail /> },
-          { path: 'vouchers', element: <Vouchers /> },
-          { path: 'account-mapper', element: <AccountMapper /> },
-          { path: 'g2p-config', element: <G2PConfig /> },
-          { path: 'settings', element: <Settings /> },
-          { path: 'rbac', element: <RBACConfig /> },
-          { path: 'reporting', element: <Reporting /> },
-          { path: 'visualizations', element: <Visualizations /> },
+          {
+            path: '/',
+            element: <AppLayout />,
+            children: [
+              { index: true, element: <Dashboard /> },
+              { path: 'payment-hub', element: <PaymentHub /> },
+              { path: 'payment-hub/batch/:batchId', element: <BatchDetail /> },
+              { path: 'vouchers', element: <Vouchers /> },
+              { path: 'account-mapper', element: <AccountMapper /> },
+              { path: 'g2p-config', element: <G2PConfig /> },
+              { path: 'settings', element: <Settings /> },
+              { path: 'rbac', element: <RBACConfig /> },
+              { path: 'reporting', element: <Reporting /> },
+              { path: 'visualizations', element: <Visualizations /> },
+            ],
+          },
+          { path: '*', element: <NotFound /> },
         ],
       },
-      { path: '*', element: <NotFound /> },
     ],
   },
 ])
